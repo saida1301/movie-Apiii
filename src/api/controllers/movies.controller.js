@@ -1,4 +1,4 @@
-export const getMovies = async (req, res) => {
+ const getMovies = async (req, res) => {
     const maxPages = 50;
     const movies = [];
   
@@ -22,4 +22,8 @@ export const getMovies = async (req, res) => {
           res.sendStatus(500);
         });
     }
+}
+
+module.exports = {
+    getMovies
 }
