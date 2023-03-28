@@ -7,4 +7,4 @@ const router = express.Router();
 router.get("/:id", getReviews);
 router.post("/create", createReview);
 
-module.exports = router;
+module.exports = movie;

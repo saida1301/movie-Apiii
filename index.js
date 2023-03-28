@@ -80,7 +80,7 @@ app.post('/reviews', async (req, res) => {
   try {
     const { movie_id, author, content } = req.body;
     connection.query(
-      'INSERT INTO reviews (movie_id, author, content) VALUES (?, ?, ?)',
+      'INSERT INTO my_reviews (movie_id, author, content) VALUES (?, ?, ?)',
       [movie_id, author, content],
       (error, results, fields) => {
         if (error) throw error;
@@ -97,8 +97,6 @@ app.post('/reviews', async (req, res) => {
 
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-
-
   connection.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
     if (err) {
       console.log(err);
@@ -173,6 +171,22 @@ app.post('/signup', (req, res) => {
       });
     });
   });
+});
+app.get('/review/:id', (req, res) => {
+  const id = req.params.id;
+
+  connection.query(
+    'SELECT * FROM my_reviews WHERE id = ?',
+    [id],
+    (error, results) => {
+      if (error) {
+        console.error(error);
+        res.status(500).send('Internal server error');
+      } else {
+        res.json(results);
+      }
+    }
+  );
 });
 
 
