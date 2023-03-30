@@ -1,12 +1,16 @@
 import express from 'express';
 import { createConnection } from 'mysql';
 import axios from 'axios';
-
+import passport from 'passport';
 import bodyParser from 'body-parser';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
+
 const app = express();
+
+
+
 
 const connection = createConnection({
   host: 'localhost',
@@ -29,6 +33,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(passport.initialize());
 
 
 
@@ -122,7 +127,7 @@ app.post('/login', (req, res) => {
         return;
       }
 
-      const token = jwt.sign({ id: user.id }, 'secret', { expiresIn: '1d' });
+      const token = jwt.sign({ id: user.id }, 'secret', { expiresIn: '1h' });
       res.json({ token });
     });
   });
@@ -165,29 +170,57 @@ app.post('/signup', (req, res) => {
           }
 
     
-          const token = jwt.sign({ id: results.insertId }, 'secret', { expiresIn: '1d' });
+          const token = jwt.sign({ id: results.insertId }, 'secret', { expiresIn: '1h' });
           res.json({ token });
         });
       });
     });
   });
 });
-app.get('/review/:id', (req, res) => {
-  const id = req.params.id;
-
-  connection.query(
-    'SELECT * FROM my_reviews WHERE id = ?',
-    [id],
-    (error, results) => {
-      if (error) {
-        console.error(error);
-        res.status(500).send('Internal server error');
-      } else {
-        res.json(results);
-      }
+app.get('/reviews/:movie_id', (req, res) => {
+  const movie_id = req.params.movie_id;
+  console.log(movie_id);
+  connection.query('SELECT * FROM my_reviews WHERE movie_id = ?', [movie_id], (error, results) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Internal server error');
+    } else {
+      res.json(results);
     }
-  );
+  });
 });
+
+
+
+
+// app.post('/favorites/add', passport.authenticate('jwt', { session: false }), (req, res) => {
+//   const { userId, movie } = req.body;
+
+//   const selectQuery = `SELECT id FROM favorites WHERE user_id = ? AND movie_id = ?`;
+//   connection.query(selectQuery, [userId, movie.id], (err, result) => {
+//     if (err) {
+//       console.error('Error querying the favorites table:', err);
+//       res.status(500).send('Internal server error');
+//       return;
+//     }
+
+//     if (result.length > 0) {
+//       res.status(400).send('The movie is already in your favorites');
+//       return;
+//     }
+
+
+//     const insertQuery = `INSERT INTO favorites (user_id, movie_id, title, poster_path) VALUES (?, ?, ?, ?)`;
+//     connection.query(insertQuery, [userId, movie.id, movie.title, movie.poster_path], (err, result) => {
+//       if (err) {
+//         console.error('Error inserting the movie to the favorites table:', err);
+//         res.status(500).send('Internal server error');
+//         return;
+//       }
+//       res.status(200).send('Movie added to favorites');
+//     });
+//   });
+// });
 
 
 app.listen(3000, () => {
