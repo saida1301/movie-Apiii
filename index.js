@@ -179,8 +179,11 @@ app.post('/signup', (req, res) => {
 });
 app.get('/reviews/:movie_id', (req, res) => {
   const movie_id = req.params.movie_id;
-  console.log(movie_id);
-  connection.query('SELECT * FROM my_reviews WHERE movie_id = ?', [movie_id], (error, results) => {
+  const page = parseInt(req.query.page || '1', 25);
+  const limit = parseInt(req.query.limit || '10', 25);
+  const offset = (page - 1) * limit;
+  console.log('movie_id:', movie_id, 'page:', page, 'limit:', limit, 'offset:', offset);
+  connection.query('SELECT * FROM my_reviews WHERE movie_id = ? LIMIT ? OFFSET ?', [movie_id, limit, offset], (error, results) => {
     if (error) {
       console.error(error);
       res.status(500).send('Internal server error');
@@ -191,6 +194,25 @@ app.get('/reviews/:movie_id', (req, res) => {
 });
 
 
+app.get('/user/:userId', (req, res) => {
+  const userId = req.params.userId; 
+  const query = 'SELECT * FROM users WHERE id = ?';
+  connection.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Error retrieving user: ' + err.stack);
+      res.status(500).send('Error retrieving user');
+      return;
+    }
+
+    if (results.length === 0) {
+      res.status(404).send('User not found');
+      return;
+    }
+
+    const user = results[0];
+    res.send(user);
+  });
+});
 
 
 // app.post('/favorites/add', passport.authenticate('jwt', { session: false }), (req, res) => {
