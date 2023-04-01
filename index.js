@@ -32,47 +32,76 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(passport.initialize());
 
 app.use("/movies", async (req, res) => {
-  const maxPages = 50;
-  const movies = [];
-
-  for (let page = 1; page <= maxPages; page++) {
-    const movieEndpoint = `https://api.themoviedb.org/3/movie/popular?page=${page}&api_key=3d6e79ce250ad232454ebce43ea754b8`;
-
-    axios
-      .get(movieEndpoint)
-      .then((response) => {
-        const movieData = response.data.results.map((movie) => {
-          const { id, title, overview, release_date, poster_path } = movie;
-          return { id, title, overview, release_date, poster_path };
-        });
-        movies.push(...movieData);
-
-        if (page === maxPages) {
-          res.json(movies);
-        }
-      })
-      .catch((error) => {
-        console.log(error);
-        res.sendStatus(500);
-      });
-  }
-});
-app.use("/reviews/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-    const reviewEndpoint = `https://api.themoviedb.org/3/movie/${id}/reviews?api_key=3d6e79ce250ad232454ebce43ea754b8`;
-
-    const response = await axios.get(reviewEndpoint);
-    const reviews = response.data.results.map((review) => {
-      const { author, content } = review;
-      return { movie_id: id, author, content };
-    });
-    res.json(reviews);
+    connection.query(
+      "SELECT * FROM my_movies",
+      (error, results, fields) => {
+        if (error) throw error;
+        res.json(results);
+      }
+    );
   } catch (error) {
     console.log(error);
     res.sendStatus(500);
   }
 });
+
+app.use("/movies", async (req, res) => {
+  try {
+    connection.query(
+      "SELECT * FROM movie",
+      (error, results, fields) => {
+        if (error) throw error;
+        res.json(results);
+      }
+    );
+  } catch (error) {
+    console.log(error);
+    res.sendStatus(500);
+  }
+});
+
+app.use("/movies/best", async (req, res) => {
+  try {
+    const date = new Date();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    connection.query(
+      "SELECT * FROM movie WHERE YEAR(release_date) = ? AND MONTH(release_date) = ? ORDER BY vote_average DESC LIMIT 10",
+      [year, month],
+      (error, results, fields) => {
+        if (error) throw error;
+        res.json(results);
+      }
+    );
+  } catch (error) {
+    console.log(error);
+    res.sendStatus(500);
+  }
+});
+
+
+
+
+
+app.use("/reviews/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    connection.query(
+      "SELECT * FROM my_reviews WHERE movie_id = ?",
+      [id],
+      (error, results, fields) => {
+        if (error) throw error;
+        res.json(results);
+      }
+    );
+  } catch (error) {
+    console.log(error);
+    res.sendStatus(500);
+  }
+});
+
 
 app.post("/reviews", async (req, res) => {
   try {
