@@ -12,7 +12,7 @@ const connection = createConnection({
   host: "localhost",
   user: "root",
   password: "",
-  database: "my_movies_db",
+  database: "movieapp",
 });
 
 connection.connect(function (err) {
@@ -33,28 +33,10 @@ app.use(passport.initialize());
 
 app.use("/movies", async (req, res) => {
   try {
-    connection.query(
-      "SELECT * FROM my_movies",
-      (error, results, fields) => {
-        if (error) throw error;
-        res.json(results);
-      }
-    );
-  } catch (error) {
-    console.log(error);
-    res.sendStatus(500);
-  }
-});
-
-app.use("/movies", async (req, res) => {
-  try {
-    connection.query(
-      "SELECT * FROM movie",
-      (error, results, fields) => {
-        if (error) throw error;
-        res.json(results);
-      }
-    );
+    connection.query("SELECT * FROM movies", (error, results, fields) => {
+      if (error) throw error;
+      res.json(results);
+    });
   } catch (error) {
     console.log(error);
     res.sendStatus(500);
@@ -67,7 +49,7 @@ app.use("/movies/best", async (req, res) => {
     const month = date.getMonth() + 1;
     const year = date.getFullYear();
     connection.query(
-      "SELECT * FROM movie WHERE YEAR(release_date) = ? AND MONTH(release_date) = ? ORDER BY vote_average DESC LIMIT 10",
+      "SELECT * FROM movies WHERE YEAR(release_date) = ? AND MONTH(release_date) = ? ORDER BY vote_average DESC LIMIT 10",
       [year, month],
       (error, results, fields) => {
         if (error) throw error;
@@ -80,16 +62,12 @@ app.use("/movies/best", async (req, res) => {
   }
 });
 
-
-
-
-
 app.use("/reviews/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
     connection.query(
-      "SELECT * FROM my_reviews WHERE movie_id = ?",
+      "SELECT * FROM movie_reviews WHERE movie_id = ?",
       [id],
       (error, results, fields) => {
         if (error) throw error;
@@ -102,12 +80,11 @@ app.use("/reviews/:id", async (req, res) => {
   }
 });
 
-
 app.post("/reviews", async (req, res) => {
   try {
     const { movie_id, author, content } = req.body;
     connection.query(
-      "INSERT INTO my_reviews (movie_id, author, content) VALUES (?, ?, ?)",
+      "INSERT INTO movie_reviews (movie_id, author, content) VALUES (?, ?, ?)",
       [movie_id, author, content],
       (error, results, fields) => {
         if (error) throw error;
@@ -191,7 +168,7 @@ app.post("/signup", (req, res) => {
           }
 
           connection.query(
-            "INSERT INTO users (name, email, password, created_at) VALUES (?, ?, ?, NOW())",
+            "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
             [name, email, hash],
             (err, results) => {
               if (err) {
@@ -227,7 +204,7 @@ app.get("/reviews/:movie_id", (req, res) => {
     offset
   );
   connection.query(
-    "SELECT * FROM my_reviews WHERE movie_id = ? LIMIT ? OFFSET ?",
+    "SELECT * FROM movie_reviews WHERE movie_id = ? LIMIT ? OFFSET ?",
     [movie_id, limit, offset],
     (error, results) => {
       if (error) {
@@ -264,7 +241,7 @@ app.get("/review/user/:userName", (req, res) => {
   const userName = req.params.userName;
 
   connection.query(
-    "SELECT * FROM my_reviews INNER JOIN users ON my_reviews.author = users.name WHERE users.name = ?",
+    "SELECT * FROM movie_reviews INNER JOIN users ON movie_reviews.author = users.name WHERE users.name = ?",
     [userName],
     (error, results, fields) => {
       if (error) {
@@ -278,34 +255,36 @@ app.get("/review/user/:userName", (req, res) => {
   );
 });
 
-app.put('/review/:id', (req, res) => {
-    const reviewId = req.params.id;
-    const { content } = req.body;
+app.put("/review/user/:author/:id", (req, res) => {
+  const author = req.params.author;
+  const id = req.params.id;
+  const { content } = req.body;
 
-    connection.query('UPDATE my_reviews SET content = ? WHERE id = ?', [content, reviewId], (error, results) => {
-        if (error) {
-            console.log(error);
-            res.status(500).send('Error updating review');
-        } else {
-            res.send('Review updated successfully');
-        }
-    });
+  const sql = `UPDATE movie_reviews SET content='${content}' WHERE author='${author}' AND id= id`;
+
+  connection.query(sql, (err, result) => {
+    if (err) throw err;
+
+    console.log(`Updated ${result.affectedRows} row(s)`);
+    res.send(`Updated ${result.affectedRows} row(s)`);
+  });
 });
 
-app.delete('/review/:id', (req, res) => {
-    const reviewId = req.params.id;
+app.delete("/review/user/:author/:id", (req, res) => {
+  const author = req.params.author;
+  const id = req.params.id;
 
-    connection.query('DELETE FROM my_reviews WHERE id = ?', [reviewId], (error, results) => {
-        if (error) {
-            console.log(error);
-            res.status(500).send('Error deleting review');
-        } else {
-            res.send('Review deleted successfully');
-        }
-    });
+  const sql = `DELETE FROM movie_reviews WHERE author='${author}' AND id= id`;
+
+  connection.query(sql, (err, result) => {
+    if (err) throw err;
+
+    console.log(`Deleted ${result.affectedRows} row(s)`);
+    res.send(`Deleted ${result.affectedRows} row(s)`);
+  });
 });
 
-app.post('/favorites', (req, res) => {
+app.post("/favorites", (req, res) => {
   const { movie_id, user_id } = req.body;
 
   const sql = `INSERT INTO favorites (user_id, movie_id) VALUES (${user_id}, ${movie_id})`;
@@ -313,29 +292,29 @@ app.post('/favorites', (req, res) => {
   connection.query(sql, (error, results) => {
     if (error) {
       console.error(error);
-      return res.status(500).send('Error adding movie to favorites');
+      return res.status(500).send("Error adding movie to favorites");
     }
 
-    return res.send('Movie added to favorites');
+    return res.send("Movie added to favorites");
   });
 });
 
-app.get('/favorites/:userId', (req, res) => {
+app.get("/favorites/:userId", (req, res) => {
   const { userId } = req.params;
 
-  const sql = `SELECT * FROM my_movies WHERE id IN (SELECT movie_id FROM favorites WHERE user_id = ${userId})`;
+  const sql = `SELECT * FROM movies WHERE id IN (SELECT movie_id FROM favorites WHERE user_id = ${userId})`;
 
   connection.query(sql, (error, results) => {
     if (error) {
       console.error(error);
-      return res.status(500).send('Error retrieving favorites');
+      return res.status(500).send("Error retrieving favorites");
     }
 
     return res.json(results);
   });
 });
 
-app.delete('/favorites/:userId/:movieId', (req, res) => {
+app.delete("/favorites/:userId/:movieId", (req, res) => {
   const { userId, movieId } = req.params;
 
   const sql = `DELETE FROM favorites WHERE user_id = ${userId} AND movie_id = ${movieId}`;
@@ -343,14 +322,12 @@ app.delete('/favorites/:userId/:movieId', (req, res) => {
   connection.query(sql, (error, results) => {
     if (error) {
       console.error(error);
-      return res.status(500).send('Error removing from favorites');
+      return res.status(500).send("Error removing from favorites");
     }
 
-    return res.status(200).send('Movie removed from favorites');
+    return res.status(200).send("Movie removed from favorites");
   });
 });
-
-
 
 app.listen(3000, () => {
   console.log("Server listening on port 3000");
