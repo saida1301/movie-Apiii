@@ -67,7 +67,7 @@ app.use("/reviews/:id", async (req, res) => {
     const { id } = req.params;
 
     connection.query(
-      "SELECT * FROM movie_reviews WHERE movie_id = ?",
+      "SELECT * FROM reviews WHERE movie_id = ?",
       [id],
       (error, results, fields) => {
         if (error) throw error;
@@ -84,7 +84,7 @@ app.post("/reviews", async (req, res) => {
   try {
     const { movie_id, author, content } = req.body;
     connection.query(
-      "INSERT INTO movie_reviews (movie_id, author, content) VALUES (?, ?, ?)",
+      "INSERT INTO reviews (movie_id, author, content) VALUES (?, ?, ?)",
       [movie_id, author, content],
       (error, results, fields) => {
         if (error) throw error;
@@ -134,6 +134,8 @@ app.post("/login", (req, res) => {
     }
   );
 });
+
+
 
 app.post("/signup", (req, res) => {
   const { name, email, password } = req.body;
@@ -204,7 +206,7 @@ app.get("/reviews/:movie_id", (req, res) => {
     offset
   );
   connection.query(
-    "SELECT * FROM movie_reviews WHERE movie_id = ? LIMIT ? OFFSET ?",
+    "SELECT * FROM reviews WHERE movie_id = ? LIMIT ? OFFSET ?",
     [movie_id, limit, offset],
     (error, results) => {
       if (error) {
@@ -241,7 +243,7 @@ app.get("/review/user/:userName", (req, res) => {
   const userName = req.params.userName;
 
   connection.query(
-    "SELECT * FROM movie_reviews INNER JOIN users ON movie_reviews.author = users.name WHERE users.name = ?",
+    "SELECT * FROM reviews INNER JOIN users ON reviews.author = users.name WHERE users.name = ?",
     [userName],
     (error, results, fields) => {
       if (error) {
@@ -255,12 +257,13 @@ app.get("/review/user/:userName", (req, res) => {
   );
 });
 
-app.put("/review/user/:author/:id", (req, res) => {
-  const author = req.params.author;
-  const id = req.params.id;
+app.put("/review/:ids", (req, res) => {
+  const ids = req.params.ids;
   const { content } = req.body;
 
-  const sql = `UPDATE movie_reviews SET content='${content}' WHERE author='${author}' AND id= id`;
+  console.log( ids, content);
+
+  const sql = `UPDATE reviews SET content='${content}' WHERE  ids= '${ids}'`;
 
   connection.query(sql, (err, result) => {
     if (err) throw err;
@@ -270,11 +273,10 @@ app.put("/review/user/:author/:id", (req, res) => {
   });
 });
 
-app.delete("/review/user/:author/:id", (req, res) => {
-  const author = req.params.author;
-  const id = req.params.id;
+app.delete("/review/:ids", (req, res) => {
+  const ids = req.params.ids;
 
-  const sql = `DELETE FROM movie_reviews WHERE author='${author}' AND id= id`;
+  const sql = `DELETE FROM reviews WHERE ids='${ids}'`;
 
   connection.query(sql, (err, result) => {
     if (err) throw err;
@@ -283,6 +285,7 @@ app.delete("/review/user/:author/:id", (req, res) => {
     res.send(`Deleted ${result.affectedRows} row(s)`);
   });
 });
+
 
 app.post("/favorites", (req, res) => {
   const { movie_id, user_id } = req.body;
