@@ -1,6 +1,5 @@
 import express from "express";
 import { createConnection } from "mysql";
-import axios from "axios";
 import passport from "passport";
 import bodyParser from "body-parser";
 import bcrypt from "bcryptjs";
@@ -9,10 +8,10 @@ import jwt from "jsonwebtoken";
 const app = express();
 
 const connection = createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "movieapp",
+  host: "MYSQL8003.site4now.net",
+  user: "a95693_orkhanb",
+  password: "Orxan2002@",
+  database: "db_a95693_orkhanb",
 });
 
 connection.connect(function (err) {
