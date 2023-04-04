@@ -82,10 +82,10 @@ app.use("/reviews/:id", async (req, res) => {
 
 app.post("/reviews", async (req, res) => {
   try {
-    const { movie_id, author, content } = req.body;
+    const { movie_id, author, content, movie_title  } = req.body;
     connection.query(
-      "INSERT INTO reviews (movie_id, author, content) VALUES (?, ?, ?)",
-      [movie_id, author, content],
+      "INSERT INTO reviews (movie_id, author, content, movie_title) VALUES (?, ?, ?, ?)",
+      [movie_id, author, content, movie_title],
       (error, results, fields) => {
         if (error) throw error;
         console.log(`Review ${results.insertId} added`);
@@ -285,6 +285,11 @@ app.delete("/review/:ids", (req, res) => {
     res.send(`Deleted ${result.affectedRows} row(s)`);
   });
 });
+
+
+
+
+
 
 
 app.post("/favorites", (req, res) => {
